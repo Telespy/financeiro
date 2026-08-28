@@ -1,9 +1,13 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+// Public Supabase configuration for zero-config Vercel deployment
+const DEFAULT_SUPABASE_URL = 'https://mhlbbwnnrbakohjmjfme.supabase.co';
+const DEFAULT_SUPABASE_ANON_KEY = 'sb_publishable_7jk2Ym3U8BHVUEutoXMCMg_U94w3oke';
 
-export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey && !supabaseUrl.includes('your-supabase-url'));
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || DEFAULT_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || DEFAULT_SUPABASE_ANON_KEY;
+
+export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 
 export const supabase = isSupabaseConfigured
   ? createClient(supabaseUrl, supabaseAnonKey)
@@ -47,11 +51,9 @@ export async function loginOrRegister(email, password) {
     }
 
     if (signUpData?.user) {
-      // Check if session was created automatically or requires sign in
       if (signUpData.session) {
         return { user: signUpData.user, error: null };
       }
-      // Re-try login after signup
       const { data: retryLogin, error: retryError } = await supabase.auth.signInWithPassword({
         email,
         password
