@@ -1,5 +1,8 @@
+import { DEFAULT_CATEGORIES } from './categories';
+
 const STORAGE_KEY_TRANSACTIONS = 'fincontrol_transactions_v1';
 const STORAGE_KEY_BUDGETS = 'fincontrol_budgets_v1';
+const STORAGE_KEY_CATEGORIES = 'fincontrol_categories_v1';
 
 export const INITIAL_DEMO_TRANSACTIONS = [
   {
@@ -71,7 +74,6 @@ export function loadTransactions() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY_TRANSACTIONS);
     if (!raw) {
-      // Initialize with demo data
       saveTransactions(INITIAL_DEMO_TRANSACTIONS);
       return INITIAL_DEMO_TRANSACTIONS;
     }
@@ -90,10 +92,43 @@ export function saveTransactions(txs) {
   }
 }
 
+export function loadCategories() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_CATEGORIES);
+    if (!raw) {
+      saveCategories(DEFAULT_CATEGORIES);
+      return DEFAULT_CATEGORIES;
+    }
+    return JSON.parse(raw);
+  } catch (e) {
+    console.error('Error reading categories', e);
+    return DEFAULT_CATEGORIES;
+  }
+}
+
+export function saveCategories(cats) {
+  try {
+    localStorage.setItem(STORAGE_KEY_CATEGORIES, JSON.stringify(cats));
+  } catch (e) {
+    console.error('Error saving categories', e);
+  }
+}
+
 export function loadBudgets() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY_BUDGETS);
-    return raw ? JSON.parse(raw) : {};
+    if (!raw) {
+      // Build initial budgets map from default categories
+      const initialMap = {};
+      DEFAULT_CATEGORIES.forEach(c => {
+        if (c.defaultBudget > 0) {
+          initialMap[c.id] = c.defaultBudget;
+        }
+      });
+      saveBudgets(initialMap);
+      return initialMap;
+    }
+    return JSON.parse(raw);
   } catch (e) {
     return {};
   }
@@ -131,10 +166,11 @@ export function exportCSV(transactions) {
   document.body.removeChild(link);
 }
 
-export function exportJSON(transactions, budgets) {
+export function exportJSON(transactions, budgets, categories) {
   const data = {
     transactions,
     budgets,
+    categories,
     exportedAt: new Date().toISOString()
   };
   const jsonStr = JSON.stringify(data, null, 2);

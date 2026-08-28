@@ -4,6 +4,8 @@ import {
   saveTransactions,
   loadBudgets,
   saveBudgets,
+  loadCategories,
+  saveCategories,
   exportCSV,
   exportJSON
 } from './utils/storage';
@@ -11,6 +13,7 @@ import { Header } from './components/Header';
 import { MetricsCards } from './components/MetricsCards';
 import { ChartsView } from './components/ChartsView';
 import { BudgetOverview } from './components/BudgetOverview';
+import { BudgetModal } from './components/BudgetModal';
 import { TransactionList } from './components/TransactionList';
 import { TransactionModal } from './components/TransactionModal';
 import { PwaInstallModal } from './components/PwaInstallModal';
@@ -19,6 +22,7 @@ import confetti from 'canvas-confetti';
 export function App() {
   const [transactions, setTransactions] = useState([]);
   const [budgets, setBudgets] = useState({});
+  const [categories, setCategories] = useState([]);
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -26,12 +30,15 @@ export function App() {
   const [theme, setTheme] = useState('dark');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isPwaModalOpen, setIsPwaModalOpen] = useState(false);
+  const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState(null);
+  const [editingBudgetCategory, setEditingBudgetCategory] = useState(null);
 
   // Load initial data
   useEffect(() => {
     setTransactions(loadTransactions());
     setBudgets(loadBudgets());
+    setCategories(loadCategories());
   }, []);
 
   // Sync theme to body class
@@ -56,7 +63,6 @@ export function App() {
       updated = transactions.map(t => (t.id === newOrUpdatedTx.id ? newOrUpdatedTx : t));
     } else {
       updated = [newOrUpdatedTx, ...transactions];
-      // Trigger celebration confetti if a high income is added!
       if (newOrUpdatedTx.type === 'receita' && newOrUpdatedTx.amount >= 1000) {
         confetti({
           particleCount: 80,
@@ -89,12 +95,32 @@ export function App() {
     saveBudgets(updated);
   };
 
+  const handleRemoveBudget = (catId) => {
+    if (window.confirm('Tem certeza que deseja remover o orçamento desta categoria?')) {
+      const updated = { ...budgets, [catId]: 0 };
+      setBudgets(updated);
+      saveBudgets(updated);
+    }
+  };
+
+  const handleAddCategory = (newCat) => {
+    const updated = [...categories, newCat];
+    setCategories(updated);
+    saveCategories(updated);
+  };
+
+  const handleUpdateCategory = (updatedCat) => {
+    const updated = categories.map(c => (c.id === updatedCat.id ? updatedCat : c));
+    setCategories(updated);
+    saveCategories(updated);
+  };
+
   const handleExportCSV = () => {
     exportCSV(monthlyTransactions);
   };
 
   const handleExportJSON = () => {
-    exportJSON(transactions, budgets);
+    exportJSON(transactions, budgets, categories);
   };
 
   return (
@@ -118,23 +144,37 @@ export function App() {
       <MetricsCards transactions={monthlyTransactions} />
 
       {/* Interactive Charts (Cashflow Timeline & Category Doughnut) */}
-      <ChartsView transactions={monthlyTransactions} theme={theme} />
+      <ChartsView
+        transactions={monthlyTransactions}
+        categories={categories}
+        theme={theme}
+      />
 
       {/* Category Budget Target Tracking */}
       <BudgetOverview
         transactions={monthlyTransactions}
+        categories={categories}
         budgets={budgets}
-        onSaveBudget={handleSaveBudget}
+        onOpenAddBudgetModal={() => {
+          setEditingBudgetCategory(null);
+          setIsBudgetModalOpen(true);
+        }}
+        onEditBudget={(cat) => {
+          setEditingBudgetCategory(cat);
+          setIsBudgetModalOpen(true);
+        }}
+        onRemoveBudget={handleRemoveBudget}
       />
 
       {/* Transaction History & Search/Filters */}
       <TransactionList
         transactions={monthlyTransactions}
+        categories={categories}
         onDeleteTransaction={handleDeleteTransaction}
         onEditTransaction={handleEditTransaction}
       />
 
-      {/* Add / Edit Modal */}
+      {/* Add / Edit Transaction Modal */}
       <TransactionModal
         isOpen={isAddModalOpen}
         onClose={() => {
@@ -143,6 +183,22 @@ export function App() {
         }}
         onSave={handleSaveTransaction}
         editingTransaction={editingTransaction}
+        categories={categories}
+      />
+
+      {/* Add / Edit Budget Target Modal */}
+      <BudgetModal
+        isOpen={isBudgetModalOpen}
+        onClose={() => {
+          setIsBudgetModalOpen(false);
+          setEditingBudgetCategory(null);
+        }}
+        onSaveBudget={handleSaveBudget}
+        onAddCategory={handleAddCategory}
+        onUpdateCategory={handleUpdateCategory}
+        editingBudgetCategory={editingBudgetCategory}
+        categories={categories}
+        budgets={budgets}
       />
 
       {/* PWA Mobile Installation Guide Modal */}

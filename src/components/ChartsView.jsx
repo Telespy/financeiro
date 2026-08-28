@@ -12,7 +12,7 @@ import {
   LineElement
 } from 'chart.js';
 import { Doughnut, Bar } from 'react-chartjs-2';
-import { CATEGORIES } from '../utils/categories';
+import { getCategoryObj } from '../utils/categories';
 import { PieChart, BarChart2 } from 'lucide-react';
 
 ChartJS.register(
@@ -27,7 +27,7 @@ ChartJS.register(
   LineElement
 );
 
-export function ChartsView({ transactions, theme }) {
+export function ChartsView({ transactions, categories = [], theme }) {
   const expenses = transactions.filter(t => t.type === 'despesa');
 
   // Calculate totals per category
@@ -36,14 +36,15 @@ export function ChartsView({ transactions, theme }) {
     categoryTotals[t.category] = (categoryTotals[t.category] || 0) + Number(t.amount);
   });
 
-  const activeCategories = CATEGORIES.filter(cat => (categoryTotals[cat.id] || 0) > 0);
+  const activeCategoryIds = Object.keys(categoryTotals).filter(catId => categoryTotals[catId] > 0);
+  const activeCategoriesObj = activeCategoryIds.map(catId => getCategoryObj(catId, categories));
 
   const doughnutData = {
-    labels: activeCategories.map(c => c.label),
+    labels: activeCategoriesObj.map(c => c.label),
     datasets: [
       {
-        data: activeCategories.map(c => categoryTotals[c.id]),
-        backgroundColor: activeCategories.map(c => c.color),
+        data: activeCategoriesObj.map(c => categoryTotals[c.id]),
+        backgroundColor: activeCategoriesObj.map(c => c.color || '#64748b'),
         borderColor: theme === 'dark' ? '#0f172a' : '#ffffff',
         borderWidth: 2
       }
@@ -173,7 +174,7 @@ export function ChartsView({ transactions, theme }) {
           </div>
         </div>
         <div style={{ flex: 1, minHeight: '240px', position: 'relative' }}>
-          {activeCategories.length > 0 ? (
+          {activeCategoriesObj.length > 0 ? (
             <Doughnut data={doughnutData} options={doughnutOptions} />
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-dim)' }}>

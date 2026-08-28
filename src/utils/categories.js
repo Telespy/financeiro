@@ -1,4 +1,4 @@
-export const CATEGORIES = [
+export const DEFAULT_CATEGORIES = [
   { id: 'alimentacao', label: 'Alimentação', icon: 'Utensils', color: '#ef4444', defaultBudget: 1200 },
   { id: 'moradia', label: 'Moradia', icon: 'Home', color: '#3b82f6', defaultBudget: 2000 },
   { id: 'transporte', label: 'Transporte', icon: 'Car', color: '#f59e0b', defaultBudget: 600 },
@@ -19,6 +19,17 @@ export const PAYMENT_METHODS = [
   { id: 'transferencia', label: 'Transferência Bancária' }
 ];
 
-export function getCategoryObj(catId) {
-  return CATEGORIES.find(c => c.id === catId) || CATEGORIES[CATEGORIES.length - 1];
+export function getCategoryObj(catId, categoriesList = DEFAULT_CATEGORIES) {
+  return categoriesList.find(c => c.id === catId) || categoriesList[categoriesList.length - 1] || {
+    id: catId,
+    label: catId,
+    color: '#64748b',
+    defaultBudget: 0
+  };
 }
+
+export const PALETTE_COLORS = [
+  '#ef4444', '#f97316', '#f59e0b', '#10b981', '#06b6d4',
+  '#3b82f6', '#6366f1', '#8b5cf6', '#d946ef', '#ec4899',
+  '#14b8a6', '#84cc16', '#eab308', '#64748b'
+];

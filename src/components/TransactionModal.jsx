@@ -1,32 +1,38 @@
 import React, { useState, useEffect } from 'react';
 import { X, Check } from 'lucide-react';
-import { CATEGORIES, PAYMENT_METHODS } from '../utils/categories';
+import { PAYMENT_METHODS } from '../utils/categories';
 
-export function TransactionModal({ isOpen, onClose, onSave, editingTransaction }) {
+export function TransactionModal({ isOpen, onClose, onSave, editingTransaction, categories = [] }) {
   const [type, setType] = useState('despesa');
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
-  const [category, setCategory] = useState(CATEGORIES[0].id);
+  const [category, setCategory] = useState('');
   const [paymentMethod, setPaymentMethod] = useState(PAYMENT_METHODS[0].id);
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+
+  useEffect(() => {
+    if (categories.length > 0 && !category) {
+      setCategory(categories[0].id);
+    }
+  }, [categories, category]);
 
   useEffect(() => {
     if (editingTransaction) {
       setType(editingTransaction.type || 'despesa');
       setDescription(editingTransaction.description || '');
       setAmount(editingTransaction.amount || '');
-      setCategory(editingTransaction.category || CATEGORIES[0].id);
+      setCategory(editingTransaction.category || (categories[0]?.id || ''));
       setPaymentMethod(editingTransaction.paymentMethod || PAYMENT_METHODS[0].id);
       setDate(editingTransaction.date || new Date().toISOString().split('T')[0]);
     } else {
       setType('despesa');
       setDescription('');
       setAmount('');
-      setCategory(CATEGORIES[0].id);
+      setCategory(categories[0]?.id || '');
       setPaymentMethod(PAYMENT_METHODS[0].id);
       setDate(new Date().toISOString().split('T')[0]);
     }
-  }, [editingTransaction, isOpen]);
+  }, [editingTransaction, isOpen, categories]);
 
   if (!isOpen) return null;
 
@@ -39,7 +45,7 @@ export function TransactionModal({ isOpen, onClose, onSave, editingTransaction }
       type,
       description: description.trim(),
       amount: parseFloat(amount),
-      category,
+      category: category || (categories[0]?.id || 'outros'),
       paymentMethod,
       date
     });
@@ -146,7 +152,7 @@ export function TransactionModal({ isOpen, onClose, onSave, editingTransaction }
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
               >
-                {CATEGORIES.map(c => (
+                {categories.map(c => (
                   <option key={c.id} value={c.id}>{c.label}</option>
                 ))}
               </select>

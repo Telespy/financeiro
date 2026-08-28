@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Search, Filter, Trash2, Edit3, ArrowUpCircle, ArrowDownCircle, ListFilter } from 'lucide-react';
-import { CATEGORIES, PAYMENT_METHODS, getCategoryObj } from '../utils/categories';
+import { PAYMENT_METHODS, getCategoryObj } from '../utils/categories';
 
-export function TransactionList({ transactions, onDeleteTransaction, onEditTransaction }) {
+export function TransactionList({ transactions, categories = [], onDeleteTransaction, onEditTransaction }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState('todos');
   const [selectedCategory, setSelectedCategory] = useState('todas');
@@ -76,7 +76,7 @@ export function TransactionList({ transactions, onDeleteTransaction, onEditTrans
           onChange={(e) => setSelectedCategory(e.target.value)}
         >
           <option value="todas">Todas as Categorias</option>
-          {CATEGORIES.map(c => (
+          {categories.map(c => (
             <option key={c.id} value={c.id}>{c.label}</option>
           ))}
         </select>
@@ -114,7 +114,7 @@ export function TransactionList({ transactions, onDeleteTransaction, onEditTrans
             </thead>
             <tbody>
               {sorted.map(t => {
-                const catObj = getCategoryObj(t.category);
+                const catObj = getCategoryObj(t.category, categories);
                 const payObj = PAYMENT_METHODS.find(p => p.id === t.paymentMethod) || { label: t.paymentMethod };
                 const isIncome = t.type === 'receita';
 
@@ -137,9 +137,9 @@ export function TransactionList({ transactions, onDeleteTransaction, onEditTrans
                       <span
                         className="badge"
                         style={{
-                          backgroundColor: `${catObj.color}15`,
-                          color: catObj.color,
-                          border: `1px solid ${catObj.color}40`
+                          backgroundColor: `${catObj.color || '#64748b'}20`,
+                          color: catObj.color || '#64748b',
+                          border: `1px solid ${catObj.color || '#64748b'}50`
                         }}
                       >
                         {catObj.label}
