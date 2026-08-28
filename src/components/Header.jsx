@@ -1,5 +1,5 @@
 import React from 'react';
-import { Wallet, Plus, Smartphone, Moon, Sun, FileSpreadsheet, LogOut, User } from 'lucide-react';
+import { DollarSign, Plus, Smartphone, Moon, Sun, FileSpreadsheet, LogOut, User } from 'lucide-react';
 
 export function Header({
   selectedMonth,
@@ -17,7 +17,7 @@ export function Header({
     <header className="header-bar glass-card" style={{ padding: '1rem 1.5rem' }}>
       <div className="brand-logo">
         <div className="brand-icon">
-          <Wallet size={24} />
+          <DollarSign size={24} strokeWidth={2.5} />
         </div>
         <div>
           <h1 className="brand-title">FinControl</h1>

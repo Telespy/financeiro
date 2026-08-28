@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Wallet, Lock, Mail, Eye, EyeOff, LogIn, Database, ArrowRight, ShieldCheck } from 'lucide-react';
+import { DollarSign, Lock, Mail, Eye, EyeOff, LogIn, Database, ArrowRight, ShieldCheck } from 'lucide-react';
 import { loginOrRegister, isSupabaseConfigured } from '../lib/supabase';
 
 export function LoginScreen({ onLoginSuccess }) {
@@ -61,7 +61,7 @@ export function LoginScreen({ onLoginSuccess }) {
             className="brand-icon"
             style={{ width: '56px', height: '56px', margin: '0 auto 1rem auto', borderRadius: '16px' }}
           >
-            <Wallet size={30} />
+            <DollarSign size={30} strokeWidth={2.5} />
           </div>
           <h1 className="brand-title" style={{ fontSize: '1.8rem' }}>FinControl</h1>
           <p style={{ fontSize: '0.88rem', color: 'var(--text-dim)', marginTop: '0.25rem' }}>

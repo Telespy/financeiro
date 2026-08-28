@@ -1,13 +1,23 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
   <rect width="512" height="512" rx="128" fill="url(#bg-grad)"/>
-  <path d="M160 352L224 288L288 320L352 224" stroke="#38bdf8" stroke-width="32" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="352" cy="224" r="16" fill="#38bdf8"/>
-  <path d="M256 120C220 120 192 144 192 176C192 216 248 224 256 240C264 256 248 280 216 280" stroke="#10b981" stroke-width="28" stroke-linecap="round"/>
-  <path d="M256 96V320" stroke="#10b981" stroke-width="28" stroke-linecap="round"/>
+  <!-- Glowing background ring -->
+  <circle cx="256" cy="256" r="160" fill="url(#glow-grad)" opacity="0.15"/>
+  <!-- $ Symbol -->
+  <path d="M256 80V432" stroke="url(#dollar-line-grad)" stroke-width="36" stroke-linecap="round"/>
+  <path d="M340 160H230C190 160 160 185 160 224C160 268 200 280 256 290C312 300 352 312 352 356C352 395 320 420 270 420H160" stroke="url(#dollar-line-grad)" stroke-width="36" stroke-linecap="round" stroke-linejoin="round"/>
   <defs>
     <linearGradient id="bg-grad" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
       <stop stop-color="#0f172a"/>
       <stop offset="1" stop-color="#1e293b"/>
     </linearGradient>
+    <linearGradient id="dollar-line-grad" x1="160" y1="80" x2="352" y2="432" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#38bdf8"/>
+      <stop offset="0.5" stop-color="#10b981"/>
+      <stop offset="1" stop-color="#8b5cf6"/>
+    </linearGradient>
+    <radialGradient id="glow-grad" cx="256" cy="256" r="160" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#38bdf8"/>
+      <stop offset="1" stop-color="#10b981" stop-opacity="0"/>
+    </radialGradient>
   </defs>
 </svg>
