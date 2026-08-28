@@ -9,6 +9,16 @@ import {
   exportCSV,
   exportJSON
 } from './utils/storage';
+import {
+  getCurrentUser,
+  logoutUser,
+  isSupabaseConfigured,
+  supabase,
+  fetchSqlTransactions,
+  saveSqlTransaction,
+  deleteSqlTransaction
+} from './lib/supabase';
+
 import { Header } from './components/Header';
 import { MetricsCards } from './components/MetricsCards';
 import { ChartsView } from './components/ChartsView';
@@ -17,9 +27,13 @@ import { BudgetModal } from './components/BudgetModal';
 import { TransactionList } from './components/TransactionList';
 import { TransactionModal } from './components/TransactionModal';
 import { PwaInstallModal } from './components/PwaInstallModal';
+import { LoginScreen } from './components/LoginScreen';
 import confetti from 'canvas-confetti';
 
 export function App() {
+  const [currentUser, setCurrentUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
   const [transactions, setTransactions] = useState([]);
   const [budgets, setBudgets] = useState({});
   const [categories, setCategories] = useState([]);
@@ -34,12 +48,43 @@ export function App() {
   const [editingTransaction, setEditingTransaction] = useState(null);
   const [editingBudgetCategory, setEditingBudgetCategory] = useState(null);
 
-  // Load initial data
+  // Auth Initialization
   useEffect(() => {
-    setTransactions(loadTransactions());
-    setBudgets(loadBudgets());
-    setCategories(loadCategories());
+    async function initAuth() {
+      const user = await getCurrentUser();
+      setCurrentUser(user);
+      setAuthLoading(false);
+    }
+
+    initAuth();
+
+    if (isSupabaseConfigured && supabase) {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        setCurrentUser(session?.user || null);
+        setAuthLoading(false);
+      });
+      return () => subscription.unsubscribe();
+    }
   }, []);
+
+  // Load User Data from SQL Database or LocalStorage when user changes
+  useEffect(() => {
+    if (!currentUser) return;
+
+    async function loadData() {
+      // 1. Try fetching SQL transactions
+      const sqlTxs = await fetchSqlTransactions(currentUser.id);
+      if (sqlTxs !== null && sqlTxs.length > 0) {
+        setTransactions(sqlTxs);
+      } else {
+        setTransactions(loadTransactions());
+      }
+      setBudgets(loadBudgets());
+      setCategories(loadCategories());
+    }
+
+    loadData();
+  }, [currentUser]);
 
   // Sync theme to body class
   useEffect(() => {
@@ -50,13 +95,26 @@ export function App() {
     }
   }, [theme]);
 
+  if (authLoading) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-dim)' }}>
+        Carregando FinControl...
+      </div>
+    );
+  }
+
+  // Render Login Screen if user is not authenticated
+  if (!currentUser) {
+    return <LoginScreen onLoginSuccess={setCurrentUser} />;
+  }
+
   // Filter transactions by selected month
   const monthlyTransactions = transactions.filter(t => {
     if (!t.date) return false;
     return t.date.startsWith(selectedMonth);
   });
 
-  const handleSaveTransaction = (newOrUpdatedTx) => {
+  const handleSaveTransaction = async (newOrUpdatedTx) => {
     let updated;
     const exists = transactions.some(t => t.id === newOrUpdatedTx.id);
     if (exists) {
@@ -73,14 +131,20 @@ export function App() {
     }
     setTransactions(updated);
     saveTransactions(updated);
+    if (currentUser) {
+      await saveSqlTransaction(currentUser.id, newOrUpdatedTx);
+    }
     setEditingTransaction(null);
   };
 
-  const handleDeleteTransaction = (id) => {
+  const handleDeleteTransaction = async (id) => {
     if (window.confirm('Tem certeza que deseja excluir esta transação?')) {
       const updated = transactions.filter(t => t.id !== id);
       setTransactions(updated);
       saveTransactions(updated);
+      if (currentUser) {
+        await deleteSqlTransaction(currentUser.id, id);
+      }
     }
   };
 
@@ -115,6 +179,11 @@ export function App() {
     saveCategories(updated);
   };
 
+  const handleLogout = async () => {
+    await logoutUser();
+    setCurrentUser(null);
+  };
+
   const handleExportCSV = () => {
     exportCSV(monthlyTransactions);
   };
@@ -138,12 +207,14 @@ export function App() {
         onExportJSON={handleExportJSON}
         theme={theme}
         onToggleTheme={() => setTheme(prev => (prev === 'dark' ? 'light' : 'dark'))}
+        currentUser={currentUser}
+        onLogout={handleLogout}
       />
 
       {/* Financial Overview Metrics Cards */}
       <MetricsCards transactions={monthlyTransactions} />
 
-      {/* Interactive Charts (Cashflow Timeline & Category Doughnut) */}
+      {/* Interactive Charts */}
       <ChartsView
         transactions={monthlyTransactions}
         categories={categories}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Wallet, Plus, Download, Smartphone, Moon, Sun, FileSpreadsheet } from 'lucide-react';
+import { Wallet, Plus, Smartphone, Moon, Sun, FileSpreadsheet, LogOut, User } from 'lucide-react';
 
 export function Header({
   selectedMonth,
@@ -9,7 +9,9 @@ export function Header({
   onExportCSV,
   onExportJSON,
   theme,
-  onToggleTheme
+  onToggleTheme,
+  currentUser,
+  onLogout
 }) {
   return (
     <header className="header-bar glass-card" style={{ padding: '1rem 1.5rem' }}>
@@ -19,9 +21,12 @@ export function Header({
         </div>
         <div>
           <h1 className="brand-title">FinControl</h1>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)', fontWeight: 500 }}>
-            Gestão Financeira Pessoal
-          </span>
+          {currentUser && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.75rem', color: '#38bdf8', fontWeight: 600 }}>
+              <User size={12} />
+              <span>{currentUser.email || 'Usuário'}</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -65,6 +70,18 @@ export function Header({
         >
           {theme === 'dark' ? <Sun size={18} color="#f59e0b" /> : <Moon size={18} color="#6366f1" />}
         </button>
+
+        {/* Logout Button */}
+        {currentUser && (
+          <button
+            className="btn btn-secondary btn-icon-only"
+            onClick={onLogout}
+            title="Sair do FinControl"
+            style={{ color: '#ef4444' }}
+          >
+            <LogOut size={18} />
+          </button>
+        )}
 
         {/* Add Transaction Primary Button */}
         <button className="btn btn-primary" onClick={onOpenAddModal}>
