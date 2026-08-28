@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
-  loadTransactions,
-  saveTransactions,
+  INITIAL_DEMO_TRANSACTIONS,
+  loadUserTransactions,
+  saveUserTransactions,
   loadBudgets,
   saveBudgets,
   loadCategories,
@@ -67,20 +68,25 @@ export function App() {
     }
   }, []);
 
-  // Load User Data from SQL Database or LocalStorage when user changes
+  // Load User Data when user changes
   useEffect(() => {
     if (!currentUser) return;
 
     async function loadData() {
-      // 1. Try fetching SQL transactions
-      const sqlTxs = await fetchSqlTransactions(currentUser.id);
-      if (sqlTxs !== null && sqlTxs.length > 0) {
-        setTransactions(sqlTxs);
+      if (currentUser.id === 'demo-local-user') {
+        // Demo Mode gets sample data
+        setTransactions(INITIAL_DEMO_TRANSACTIONS);
       } else {
-        setTransactions(loadTransactions());
+        // Real authenticated user: fetch from PostgreSQL SQL database
+        const sqlTxs = await fetchSqlTransactions(currentUser.id);
+        if (sqlTxs !== null) {
+          setTransactions(sqlTxs);
+        } else {
+          setTransactions(loadUserTransactions(currentUser.id));
+        }
       }
-      setBudgets(loadBudgets());
-      setCategories(loadCategories());
+      setBudgets(loadBudgets(currentUser.id));
+      setCategories(loadCategories(currentUser.id));
     }
 
     loadData();
@@ -130,8 +136,8 @@ export function App() {
       }
     }
     setTransactions(updated);
-    saveTransactions(updated);
-    if (currentUser) {
+    saveUserTransactions(currentUser.id, updated);
+    if (currentUser && currentUser.id !== 'demo-local-user') {
       await saveSqlTransaction(currentUser.id, newOrUpdatedTx);
     }
     setEditingTransaction(null);
@@ -141,8 +147,8 @@ export function App() {
     if (window.confirm('Tem certeza que deseja excluir esta transação?')) {
       const updated = transactions.filter(t => t.id !== id);
       setTransactions(updated);
-      saveTransactions(updated);
-      if (currentUser) {
+      saveUserTransactions(currentUser.id, updated);
+      if (currentUser && currentUser.id !== 'demo-local-user') {
         await deleteSqlTransaction(currentUser.id, id);
       }
     }
@@ -156,27 +162,27 @@ export function App() {
   const handleSaveBudget = (catId, limit) => {
     const updated = { ...budgets, [catId]: limit };
     setBudgets(updated);
-    saveBudgets(updated);
+    saveBudgets(currentUser.id, updated);
   };
 
   const handleRemoveBudget = (catId) => {
     if (window.confirm('Tem certeza que deseja remover o orçamento desta categoria?')) {
       const updated = { ...budgets, [catId]: 0 };
       setBudgets(updated);
-      saveBudgets(updated);
+      saveBudgets(currentUser.id, updated);
     }
   };
 
   const handleAddCategory = (newCat) => {
     const updated = [...categories, newCat];
     setCategories(updated);
-    saveCategories(updated);
+    saveCategories(currentUser.id, updated);
   };
 
   const handleUpdateCategory = (updatedCat) => {
     const updated = categories.map(c => (c.id === updatedCat.id ? updatedCat : c));
     setCategories(updated);
-    saveCategories(updated);
+    saveCategories(currentUser.id, updated);
   };
 
   const handleLogout = async () => {

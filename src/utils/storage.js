@@ -1,9 +1,5 @@
 import { DEFAULT_CATEGORIES } from './categories';
 
-const STORAGE_KEY_TRANSACTIONS = 'fincontrol_transactions_v1';
-const STORAGE_KEY_BUDGETS = 'fincontrol_budgets_v1';
-const STORAGE_KEY_CATEGORIES = 'fincontrol_categories_v1';
-
 export const INITIAL_DEMO_TRANSACTIONS = [
   {
     id: 'demo-1',
@@ -70,62 +66,60 @@ export const INITIAL_DEMO_TRANSACTIONS = [
   }
 ];
 
-export function loadTransactions() {
+export function loadUserTransactions(userId) {
+  if (!userId || userId === 'demo-local-user') {
+    return INITIAL_DEMO_TRANSACTIONS;
+  }
   try {
-    const raw = localStorage.getItem(STORAGE_KEY_TRANSACTIONS);
+    const raw = localStorage.getItem(`fincontrol_txs_${userId}`);
     if (!raw) {
-      saveTransactions(INITIAL_DEMO_TRANSACTIONS);
-      return INITIAL_DEMO_TRANSACTIONS;
+      return []; // Brand new real users start with 0 transactions!
     }
     return JSON.parse(raw);
   } catch (e) {
-    console.error('Error reading transactions', e);
     return [];
   }
 }
 
-export function saveTransactions(txs) {
+export function saveUserTransactions(userId, txs) {
+  if (!userId) return;
   try {
-    localStorage.setItem(STORAGE_KEY_TRANSACTIONS, JSON.stringify(txs));
+    localStorage.setItem(`fincontrol_txs_${userId}`, JSON.stringify(txs));
   } catch (e) {
-    console.error('Error saving transactions', e);
+    console.error('Error saving user transactions', e);
   }
 }
 
-export function loadCategories() {
+export function loadCategories(userId) {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY_CATEGORIES);
+    const raw = localStorage.getItem(`fincontrol_cats_${userId || 'default'}`);
     if (!raw) {
-      saveCategories(DEFAULT_CATEGORIES);
       return DEFAULT_CATEGORIES;
     }
     return JSON.parse(raw);
   } catch (e) {
-    console.error('Error reading categories', e);
     return DEFAULT_CATEGORIES;
   }
 }
 
-export function saveCategories(cats) {
+export function saveCategories(userId, cats) {
   try {
-    localStorage.setItem(STORAGE_KEY_CATEGORIES, JSON.stringify(cats));
+    localStorage.setItem(`fincontrol_cats_${userId || 'default'}`, JSON.stringify(cats));
   } catch (e) {
     console.error('Error saving categories', e);
   }
 }
 
-export function loadBudgets() {
+export function loadBudgets(userId) {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY_BUDGETS);
+    const raw = localStorage.getItem(`fincontrol_budgets_${userId || 'default'}`);
     if (!raw) {
-      // Build initial budgets map from default categories
       const initialMap = {};
       DEFAULT_CATEGORIES.forEach(c => {
         if (c.defaultBudget > 0) {
           initialMap[c.id] = c.defaultBudget;
         }
       });
-      saveBudgets(initialMap);
       return initialMap;
     }
     return JSON.parse(raw);
@@ -134,9 +128,9 @@ export function loadBudgets() {
   }
 }
 
-export function saveBudgets(budgets) {
+export function saveBudgets(userId, budgets) {
   try {
-    localStorage.setItem(STORAGE_KEY_BUDGETS, JSON.stringify(budgets));
+    localStorage.setItem(`fincontrol_budgets_${userId || 'default'}`, JSON.stringify(budgets));
   } catch (e) {
     console.error('Error saving budgets', e);
   }
