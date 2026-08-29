@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fincontrol-v1';
+const CACHE_NAME = 'fincontrol-v2-fresh';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
