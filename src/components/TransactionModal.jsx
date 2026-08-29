@@ -36,12 +36,22 @@ export function TransactionModal({ isOpen, onClose, onSave, editingTransaction, 
 
   if (!isOpen) return null;
 
+  const generateUUID = () => {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+      return crypto.randomUUID();
+    }
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!description.trim() || !amount || parseFloat(amount) <= 0) return;
 
     onSave({
-      id: editingTransaction ? editingTransaction.id : Date.now().toString(),
+      id: editingTransaction ? editingTransaction.id : generateUUID(),
       type,
       description: description.trim(),
       amount: parseFloat(amount),

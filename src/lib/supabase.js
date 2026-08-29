@@ -140,13 +140,24 @@ export async function fetchSqlTransactions(userId) {
   }
 }
 
+function ensureUUID(id) {
+  const strId = String(id || '');
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  if (uuidRegex.test(strId)) {
+    return strId;
+  }
+  const cleanHex = strId.replace(/[^0-9a-f]/gi, '0').padEnd(32, '0').toLowerCase();
+  return `${cleanHex.slice(0, 8)}-${cleanHex.slice(8, 12)}-4${cleanHex.slice(12, 15)}-a${cleanHex.slice(15, 18)}-${cleanHex.slice(18, 30)}`;
+}
+
 export async function saveSqlTransaction(userId, tx) {
   if (!isSupabaseConfigured || !userId) return { error: 'Supabase não configurado' };
   try {
+    const validId = ensureUUID(tx.id);
     const { error } = await supabase
       .from('transactions')
       .upsert({
-        id: String(tx.id),
+        id: validId,
         user_id: userId,
         type: tx.type,
         description: tx.description,
@@ -169,10 +180,11 @@ export async function saveSqlTransaction(userId, tx) {
 export async function deleteSqlTransaction(userId, txId) {
   if (!isSupabaseConfigured || !userId) return { error: 'Supabase não configurado' };
   try {
+    const validId = ensureUUID(txId);
     const { error } = await supabase
       .from('transactions')
       .delete()
-      .eq('id', String(txId))
+      .eq('id', validId)
       .eq('user_id', userId);
     if (error) {
       console.error('Error deleting transaction from SQL:', error.message);
