@@ -17,7 +17,11 @@ import {
   supabase,
   fetchSqlTransactions,
   saveSqlTransaction,
-  deleteSqlTransaction
+  deleteSqlTransaction,
+  fetchSqlBudgets,
+  saveSqlBudget,
+  fetchSqlCategories,
+  saveSqlCategory
 } from './lib/supabase';
 
 import { Header } from './components/Header';
@@ -76,6 +80,8 @@ export function App() {
       if (currentUser.id === 'demo-local-user') {
         // Demo Mode gets sample data
         setTransactions(INITIAL_DEMO_TRANSACTIONS);
+        setBudgets(loadBudgets(currentUser.id));
+        setCategories(loadCategories(currentUser.id));
       } else {
         // Real authenticated user: fetch from PostgreSQL SQL database
         const sqlTxs = await fetchSqlTransactions(currentUser.id);
@@ -84,9 +90,21 @@ export function App() {
         } else {
           setTransactions(loadUserTransactions(currentUser.id));
         }
+
+        const sqlBudgets = await fetchSqlBudgets(currentUser.id);
+        if (sqlBudgets !== null && Object.keys(sqlBudgets).length > 0) {
+          setBudgets(sqlBudgets);
+        } else {
+          setBudgets(loadBudgets(currentUser.id));
+        }
+
+        const sqlCats = await fetchSqlCategories(currentUser.id);
+        if (sqlCats !== null && sqlCats.length > 0) {
+          setCategories(sqlCats);
+        } else {
+          setCategories(loadCategories(currentUser.id));
+        }
       }
-      setBudgets(loadBudgets(currentUser.id));
-      setCategories(loadCategories(currentUser.id));
     }
 
     loadData();
@@ -159,30 +177,42 @@ export function App() {
     setIsAddModalOpen(true);
   };
 
-  const handleSaveBudget = (catId, limit) => {
+  const handleSaveBudget = async (catId, limit) => {
     const updated = { ...budgets, [catId]: limit };
     setBudgets(updated);
     saveBudgets(currentUser.id, updated);
+    if (currentUser && currentUser.id !== 'demo-local-user') {
+      await saveSqlBudget(currentUser.id, catId, limit);
+    }
   };
 
-  const handleRemoveBudget = (catId) => {
+  const handleRemoveBudget = async (catId) => {
     if (window.confirm('Tem certeza que deseja remover o orçamento desta categoria?')) {
       const updated = { ...budgets, [catId]: 0 };
       setBudgets(updated);
       saveBudgets(currentUser.id, updated);
+      if (currentUser && currentUser.id !== 'demo-local-user') {
+        await saveSqlBudget(currentUser.id, catId, 0);
+      }
     }
   };
 
-  const handleAddCategory = (newCat) => {
+  const handleAddCategory = async (newCat) => {
     const updated = [...categories, newCat];
     setCategories(updated);
     saveCategories(currentUser.id, updated);
+    if (currentUser && currentUser.id !== 'demo-local-user') {
+      await saveSqlCategory(currentUser.id, newCat);
+    }
   };
 
-  const handleUpdateCategory = (updatedCat) => {
+  const handleUpdateCategory = async (updatedCat) => {
     const updated = categories.map(c => (c.id === updatedCat.id ? updatedCat : c));
     setCategories(updated);
     saveCategories(currentUser.id, updated);
+    if (currentUser && currentUser.id !== 'demo-local-user') {
+      await saveSqlCategory(currentUser.id, updatedCat);
+    }
   };
 
   const handleLogout = async () => {

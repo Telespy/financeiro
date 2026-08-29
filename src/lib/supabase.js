@@ -123,7 +123,7 @@ export async function fetchSqlTransactions(userId) {
       .order('date', { ascending: false });
 
     if (error) {
-      console.warn('Supabase table query warning:', error.message);
+      console.warn('Supabase transactions table query warning:', error.message);
       return null;
     }
     return data.map(row => ({
@@ -146,7 +146,7 @@ export async function saveSqlTransaction(userId, tx) {
     await supabase
       .from('transactions')
       .upsert({
-        id: tx.id.includes('-') && tx.id.length > 20 ? tx.id : undefined,
+        id: tx.id,
         user_id: userId,
         type: tx.type,
         description: tx.description,
@@ -172,3 +172,90 @@ export async function deleteSqlTransaction(userId, txId) {
     console.error('Error deleting transaction from SQL', e);
   }
 }
+
+/* Budgets SQL Database Helpers */
+
+export async function fetchSqlBudgets(userId) {
+  if (!isSupabaseConfigured || !userId) return null;
+  try {
+    const { data, error } = await supabase
+      .from('budgets')
+      .select('*')
+      .eq('user_id', userId);
+
+    if (error) {
+      console.warn('Supabase budgets table query warning:', error.message);
+      return null;
+    }
+
+    const budgetMap = {};
+    data.forEach(row => {
+      budgetMap[row.category_id] = Number(row.amount);
+    });
+    return budgetMap;
+  } catch (e) {
+    return null;
+  }
+}
+
+export async function saveSqlBudget(userId, categoryId, amount) {
+  if (!isSupabaseConfigured || !userId) return;
+  try {
+    await supabase
+      .from('budgets')
+      .upsert({
+        user_id: userId,
+        category_id: categoryId,
+        amount: amount
+      });
+  } catch (e) {
+    console.error('Error saving budget to SQL', e);
+  }
+}
+
+/* Categories SQL Database Helpers */
+
+export async function fetchSqlCategories(userId) {
+  if (!isSupabaseConfigured || !userId) return null;
+  try {
+    const { data, error } = await supabase
+      .from('categories')
+      .select('*')
+      .eq('user_id', userId);
+
+    if (error) {
+      console.warn('Supabase categories table query warning:', error.message);
+      return null;
+    }
+    if (!data || data.length === 0) return null;
+
+    return data.map(row => ({
+      id: row.id,
+      label: row.label,
+      icon: row.icon,
+      color: row.color,
+      defaultBudget: Number(row.default_budget || 0)
+    }));
+  } catch (e) {
+    return null;
+  }
+}
+
+export async function saveSqlCategory(userId, cat) {
+  if (!isSupabaseConfigured || !userId) return;
+  try {
+    await supabase
+      .from('categories')
+      .upsert({
+        id: cat.id,
+        user_id: userId,
+        label: cat.label,
+        icon: cat.icon,
+        color: cat.color,
+        default_budget: cat.defaultBudget || 0
+      });
+  } catch (e) {
+    console.error('Error saving category to SQL', e);
+  }
+}
+
