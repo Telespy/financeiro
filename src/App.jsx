@@ -52,6 +52,7 @@ export function App() {
   const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState(null);
   const [editingBudgetCategory, setEditingBudgetCategory] = useState(null);
+  const [syncWarning, setSyncWarning] = useState(null);
 
   // Auth Initialization
   useEffect(() => {
@@ -77,32 +78,51 @@ export function App() {
     if (!currentUser) return;
 
     async function loadData() {
+      setSyncWarning(null);
       if (currentUser.id === 'demo-local-user') {
         // Demo Mode gets sample data
         setTransactions(INITIAL_DEMO_TRANSACTIONS);
         setBudgets(loadBudgets(currentUser.id));
         setCategories(loadCategories(currentUser.id));
       } else {
+        const localTxs = loadUserTransactions(currentUser.id);
+        const localBudgets = loadBudgets(currentUser.id);
+        const localCats = loadCategories(currentUser.id);
+
         // Real authenticated user: fetch from PostgreSQL SQL database
         const sqlTxs = await fetchSqlTransactions(currentUser.id);
         if (sqlTxs !== null) {
-          setTransactions(sqlTxs);
+          if (sqlTxs.length > 0) {
+            setTransactions(sqlTxs);
+            saveUserTransactions(currentUser.id, sqlTxs);
+          } else if (localTxs.length > 0) {
+            // Cloud has 0 records but local browser has records: upload local records to cloud!
+            setTransactions(localTxs);
+            for (const tx of localTxs) {
+              await saveSqlTransaction(currentUser.id, tx);
+            }
+          } else {
+            setTransactions([]);
+          }
         } else {
-          setTransactions(loadUserTransactions(currentUser.id));
+          setTransactions(localTxs);
+          setSyncWarning('⚠️ Não foi possível se conectar com as tabelas do Supabase. Certifique-se de executar o script SQL no painel do Supabase e configurar VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY na Vercel.');
         }
 
         const sqlBudgets = await fetchSqlBudgets(currentUser.id);
         if (sqlBudgets !== null && Object.keys(sqlBudgets).length > 0) {
           setBudgets(sqlBudgets);
+          saveBudgets(currentUser.id, sqlBudgets);
         } else {
-          setBudgets(loadBudgets(currentUser.id));
+          setBudgets(localBudgets);
         }
 
         const sqlCats = await fetchSqlCategories(currentUser.id);
         if (sqlCats !== null && sqlCats.length > 0) {
           setCategories(sqlCats);
+          saveCategories(currentUser.id, sqlCats);
         } else {
-          setCategories(loadCategories(currentUser.id));
+          setCategories(localCats);
         }
       }
     }
@@ -156,7 +176,10 @@ export function App() {
     setTransactions(updated);
     saveUserTransactions(currentUser.id, updated);
     if (currentUser && currentUser.id !== 'demo-local-user') {
-      await saveSqlTransaction(currentUser.id, newOrUpdatedTx);
+      const res = await saveSqlTransaction(currentUser.id, newOrUpdatedTx);
+      if (res?.error) {
+        setSyncWarning(`⚠️ Erro ao salvar no Supabase: ${res.error}. Verifique se a tabela "transactions" foi criada e o RLS está liberado.`);
+      }
     }
     setEditingTransaction(null);
   };
@@ -167,7 +190,10 @@ export function App() {
       setTransactions(updated);
       saveUserTransactions(currentUser.id, updated);
       if (currentUser && currentUser.id !== 'demo-local-user') {
-        await deleteSqlTransaction(currentUser.id, id);
+        const res = await deleteSqlTransaction(currentUser.id, id);
+        if (res?.error) {
+          setSyncWarning(`⚠️ Erro ao excluir no Supabase: ${res.error}`);
+        }
       }
     }
   };
@@ -182,7 +208,10 @@ export function App() {
     setBudgets(updated);
     saveBudgets(currentUser.id, updated);
     if (currentUser && currentUser.id !== 'demo-local-user') {
-      await saveSqlBudget(currentUser.id, catId, limit);
+      const res = await saveSqlBudget(currentUser.id, catId, limit);
+      if (res?.error) {
+        setSyncWarning(`⚠️ Erro ao salvar orçamento no Supabase: ${res.error}`);
+      }
     }
   };
 
@@ -192,7 +221,10 @@ export function App() {
       setBudgets(updated);
       saveBudgets(currentUser.id, updated);
       if (currentUser && currentUser.id !== 'demo-local-user') {
-        await saveSqlBudget(currentUser.id, catId, 0);
+        const res = await saveSqlBudget(currentUser.id, catId, 0);
+        if (res?.error) {
+          setSyncWarning(`⚠️ Erro ao remover orçamento no Supabase: ${res.error}`);
+        }
       }
     }
   };
@@ -202,7 +234,10 @@ export function App() {
     setCategories(updated);
     saveCategories(currentUser.id, updated);
     if (currentUser && currentUser.id !== 'demo-local-user') {
-      await saveSqlCategory(currentUser.id, newCat);
+      const res = await saveSqlCategory(currentUser.id, newCat);
+      if (res?.error) {
+        setSyncWarning(`⚠️ Erro ao salvar categoria no Supabase: ${res.error}`);
+      }
     }
   };
 
@@ -211,7 +246,10 @@ export function App() {
     setCategories(updated);
     saveCategories(currentUser.id, updated);
     if (currentUser && currentUser.id !== 'demo-local-user') {
-      await saveSqlCategory(currentUser.id, updatedCat);
+      const res = await saveSqlCategory(currentUser.id, updatedCat);
+      if (res?.error) {
+        setSyncWarning(`⚠️ Erro ao atualizar categoria no Supabase: ${res.error}`);
+      }
     }
   };
 
@@ -246,6 +284,33 @@ export function App() {
         currentUser={currentUser}
         onLogout={handleLogout}
       />
+
+      {/* Sync Warning Alert Banner */}
+      {syncWarning && (
+        <div
+          style={{
+            margin: '1rem 0',
+            padding: '0.85rem 1.25rem',
+            borderRadius: 'var(--radius-sm)',
+            background: 'rgba(245, 158, 11, 0.15)',
+            border: '1px solid rgba(245, 158, 11, 0.4)',
+            color: '#f59e0b',
+            fontSize: '0.88rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '1rem'
+          }}
+        >
+          <span>{syncWarning}</span>
+          <button
+            onClick={() => setSyncWarning(null)}
+            style={{ background: 'none', border: 'none', color: '#f59e0b', cursor: 'pointer', fontWeight: 'bold' }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* Financial Overview Metrics Cards */}
       <MetricsCards transactions={monthlyTransactions} />

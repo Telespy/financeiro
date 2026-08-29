@@ -141,12 +141,12 @@ export async function fetchSqlTransactions(userId) {
 }
 
 export async function saveSqlTransaction(userId, tx) {
-  if (!isSupabaseConfigured || !userId) return;
+  if (!isSupabaseConfigured || !userId) return { error: 'Supabase não configurado' };
   try {
-    await supabase
+    const { error } = await supabase
       .from('transactions')
       .upsert({
-        id: tx.id,
+        id: String(tx.id),
         user_id: userId,
         type: tx.type,
         description: tx.description,
@@ -155,21 +155,33 @@ export async function saveSqlTransaction(userId, tx) {
         payment_method: tx.paymentMethod,
         date: tx.date
       });
+    if (error) {
+      console.error('Error saving transaction to SQL:', error.message);
+      return { error: error.message };
+    }
+    return { success: true };
   } catch (e) {
-    console.error('Error saving transaction to SQL', e);
+    console.error('Error saving transaction to SQL:', e);
+    return { error: e.message };
   }
 }
 
 export async function deleteSqlTransaction(userId, txId) {
-  if (!isSupabaseConfigured || !userId) return;
+  if (!isSupabaseConfigured || !userId) return { error: 'Supabase não configurado' };
   try {
-    await supabase
+    const { error } = await supabase
       .from('transactions')
       .delete()
-      .eq('id', txId)
+      .eq('id', String(txId))
       .eq('user_id', userId);
+    if (error) {
+      console.error('Error deleting transaction from SQL:', error.message);
+      return { error: error.message };
+    }
+    return { success: true };
   } catch (e) {
-    console.error('Error deleting transaction from SQL', e);
+    console.error('Error deleting transaction from SQL:', e);
+    return { error: e.message };
   }
 }
 
@@ -199,17 +211,23 @@ export async function fetchSqlBudgets(userId) {
 }
 
 export async function saveSqlBudget(userId, categoryId, amount) {
-  if (!isSupabaseConfigured || !userId) return;
+  if (!isSupabaseConfigured || !userId) return { error: 'Supabase não configurado' };
   try {
-    await supabase
+    const { error } = await supabase
       .from('budgets')
       .upsert({
         user_id: userId,
         category_id: categoryId,
         amount: amount
       });
+    if (error) {
+      console.error('Error saving budget to SQL:', error.message);
+      return { error: error.message };
+    }
+    return { success: true };
   } catch (e) {
-    console.error('Error saving budget to SQL', e);
+    console.error('Error saving budget to SQL:', e);
+    return { error: e.message };
   }
 }
 
@@ -242,20 +260,26 @@ export async function fetchSqlCategories(userId) {
 }
 
 export async function saveSqlCategory(userId, cat) {
-  if (!isSupabaseConfigured || !userId) return;
+  if (!isSupabaseConfigured || !userId) return { error: 'Supabase não configurado' };
   try {
-    await supabase
+    const { error } = await supabase
       .from('categories')
       .upsert({
-        id: cat.id,
+        id: String(cat.id),
         user_id: userId,
         label: cat.label,
         icon: cat.icon,
         color: cat.color,
         default_budget: cat.defaultBudget || 0
       });
+    if (error) {
+      console.error('Error saving category to SQL:', error.message);
+      return { error: error.message };
+    }
+    return { success: true };
   } catch (e) {
-    console.error('Error saving category to SQL', e);
+    console.error('Error saving category to SQL:', e);
+    return { error: e.message };
   }
 }
 
