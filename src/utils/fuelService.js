@@ -39,7 +39,7 @@ export function getSavedCarConsumption() {
       return parseFloat(val);
     }
   } catch (e) {}
-  return 10; // Padrão 10 km/L
+  return 8; // Padrão 8 km/L solicitado pelo usuário
 }
 
 /**
