@@ -1,6 +1,6 @@
 # Money Control &bull; Sistema de Gestão Financeira
 
-> Sistema completo de gestão e análise financeira pessoal e familiar, com arquitetura robusta em **Node.js / Express**, interface moderna e responsiva em **Vanilla CSS / JavaScript**, gráficos interativos com **Chart.js** e banco de dados relacional **PostgreSQL 16 Alpine** executado em contêineres **Docker** sob rigorosos princípios de segurança e menor privilégio.
+> Sistema completo de gestão e análise financeira pessoal e familiar, com arquitetura robusta em **Node.js / Express**, interface moderna e responsiva em **Vanilla CSS / JavaScript**, gráficos interativos com **Chart.js** e banco de dados relacional **PostgreSQL 16 Alpine** executado em contêineres **Docker**.
 
 ---
 
@@ -19,8 +19,7 @@
   - [Opção 2: Banco no Docker e Aplicação Local (Node.js)](#opção-2-banco-no-docker-e-aplicação-local-nodejs)
   - [Opção 3: Subindo o Contêiner do Banco Manualmente via Docker CLI](#opção-3-subindo-o-contêiner-do-banco-manualmente-via-docker-cli)
 - [6. Variáveis de Ambiente (`.env`)](#6-variáveis-de-ambiente-env)
-- [7. Boas Práticas de Segurança Implementadas](#7-boas-práticas-de-segurança-implementadas)
-- [8. Comandos Úteis do Docker](#8-comandos-úteis-do-docker)
+- [7. Comandos Úteis do Docker](#7-comandos-úteis-do-docker)
 
 ---
 
@@ -267,27 +266,9 @@ Crie seu arquivo `.env` a partir do modelo `.env.example`:
 | `DB_ADMIN_USER` | Usuário admin (para scripts de migração/setup) | `postgres` |
 | `DB_ADMIN_PASSWORD` | Senha administrativa | `AdminMasterDoceria2026!` |
 
-> ⚠️ **Atenção:** Nunca comite o arquivo `.env` com senhas reais em repositórios públicos. Ele já está devidamente configurado no `.gitignore`.
-
 ---
 
-## 7. Boas Práticas de Segurança Implementadas
-
-- **Prevenção Total de SQL Injection**: 100% das consultas no [db.js](file:///c:/Users/home/Desktop/Arrumando/financeiro/db.js) utilizam parametrização nativa (`$1, $2, ...`). Não há concatenação de strings em comandos SQL.
-- **Princípio do Menor Privilégio**: O banco restringe o usuário da aplicação estritamente a consultas e mutações DML.
-- **Proteção Anti-DDoS e Limite de Payload**: O Express restringe corpos de requisições JSON a `20kb` (`express.json({ limit: '20kb' })`), evitando esgotamento de memória.
-- **Pool de Conexões Resiliente**: Limite fixo de 10 conexões simultâneas, timeout de conexão de 5 segundos e descarte automático de conexões ociosas.
-- **Cabeçalhos de Segurança (HTTP Hardening)**:
-  - `X-Content-Type-Options: nosniff`
-  - `X-Frame-Options: DENY`
-  - `X-XSS-Protection: 1; mode=block`
-  - `Referrer-Policy: no-referrer`
-- **Escapamento no DOM**: Sanitização de caracteres HTML em todas as inserções dinâmicas na interface para blindagem contra XSS.
-- **Proteção de Integridade (`ON DELETE RESTRICT`)**: Não é permitido excluir uma classe enquanto houver transações vinculadas a ela, preservando o histórico financeiro.
-
----
-
-## 8. Comandos Úteis do Docker
+## 7. Comandos Úteis do Docker
 
 - **Verificar logs do banco de dados em tempo real**:
   ```bash
