@@ -1,28 +1,31 @@
 {
-  "name": "financeiro",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
+  "name": "money-control",
+  "version": "1.0.0",
+  "description": "Money Control - Sistema de Gestão e Análise Financeira com PostgreSQL e Princípios de Segurança",
+  "main": "server.js",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "lint": "oxlint",
-    "preview": "vite preview"
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "init-db": "node scripts/setup-db.js",
+    "pm2:start": "pm2 start ecosystem.config.js",
+    "pm2:stop": "pm2 stop money-control-app",
+    "pm2:restart": "pm2 restart money-control-app",
+    "pm2:logs": "pm2 logs money-control-app",
+    "pm2:status": "pm2 status"
   },
+  "keywords": [
+    "financas",
+    "gestao-financeira",
+    "express",
+    "postgresql",
+    "security-hardening"
+  ],
+  "author": "Money Control Team",
+  "license": "ISC",
+  "type": "commonjs",
   "dependencies": {
-    "@supabase/supabase-js": "^2.112.4",
-    "canvas-confetti": "^1.9.4",
-    "chart.js": "^4.5.1",
-    "lucide-react": "^1.35.0",
-    "react": "^19.2.8",
-    "react-chartjs-2": "^5.3.1",
-    "react-dom": "^19.2.8"
-  },
-  "devDependencies": {
-    "@types/react": "^19.2.18",
-    "@types/react-dom": "^19.2.4",
-    "@vitejs/plugin-react": "^6.1.0",
-    "oxlint": "^1.79.0",
-    "vite": "^8.2.2"
+    "dotenv": "^18.0.5",
+    "express": "^5.2.1",
+    "pg": "^8.23.1"
   }
 }

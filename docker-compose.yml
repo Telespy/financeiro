@@ -1,0 +1,69 @@
+version: '3.8'
+
+services:
+  # ==========================================
+  # SERVIÇO: BANCO DE DADOS POSTGRESQL 16
+  # ==========================================
+  moneycontrol-db:
+    build:
+      context: ./database
+      dockerfile: Dockerfile
+    image: moneycontrol-db:1.0
+    container_name: moneycontrol-db
+    restart: unless-stopped
+    ports:
+      - "${DB_PORT:-5433}:5432"
+    environment:
+      POSTGRES_DB: ${DB_NAME:-moneycontrol_db}
+      POSTGRES_USER: ${DB_ADMIN_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_ADMIN_PASSWORD:-AdminMasterDoceria2026!}
+    volumes:
+      - moneycontrol_pgdata:/var/lib/postgresql/data
+    networks:
+      - moneycontrol-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d moneycontrol_db || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ==========================================
+  # SERVIÇO: APLICAÇÃO WEB MONEY CONTROL
+  # ==========================================
+  moneycontrol-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: moneycontrol-app:1.0
+    container_name: moneycontrol-app
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3002}:3002"
+    environment:
+      PORT: 3002
+      DB_HOST: moneycontrol-db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-moneycontrol_db}
+      DB_USER: ${DB_USER:-moneycontrol_user}
+      DB_PASSWORD: ${DB_PASSWORD:-MoneyControlSeguro2026!}
+      NODE_ENV: production
+    depends_on:
+      moneycontrol-db:
+        condition: service_healthy
+    networks:
+      - moneycontrol-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3002/api/status || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 8s
+
+volumes:
+  moneycontrol_pgdata:
+    driver: local
+
+networks:
+  moneycontrol-net:
+    driver: bridge
